@@ -6,7 +6,7 @@ namespace CoreConsole
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World! Jon");
+            Console.WriteLine("Hello World! Jon with the best you can do");
         }
     }
 }
