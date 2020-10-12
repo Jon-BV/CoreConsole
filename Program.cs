@@ -1,12 +1,81 @@
 ﻿using System;
+using System.IO;
+using iText.Kernel.Font;
+using iText.Kernel.Geom;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas.Parser;
+using iText.Kernel.Pdf.Canvas.Parser.Data;
+using iText.Kernel.Pdf.Canvas.Parser.Filter;
+using iText.Kernel.Pdf.Canvas.Parser.Listener;
 
 namespace CoreConsole
 {
-    class Program
+    public class ParseCustom
     {
-        static void Main(string[] args)
+        public static readonly String DEST = "C:\\parse_custom.txt";
+
+        public static readonly String SRC = "C:\\nameddestinations.pdf";
+
+        public static void Main(String[] args)
         {
-            Console.WriteLine("I will be writing a pdf extractor for shapes");
+            FileInfo file = new FileInfo(DEST);
+            file.Directory.Create();
+
+            new ParseCustom().ManipulatePdf(DEST);
+        }
+
+        public virtual void ManipulatePdf(String dest)
+        {
+            PdfDocument pdfDoc = new PdfDocument(new PdfReader(SRC));
+
+            Rectangle rect = new Rectangle(36, 750, 523, 56);
+            CustomFontFilter fontFilter = new CustomFontFilter(rect);
+            FilteredEventListener listener = new FilteredEventListener();
+
+            // Create a text extraction renderer
+            LocationTextExtractionStrategy extractionStrategy = listener
+                .AttachEventListener(new LocationTextExtractionStrategy(), fontFilter);
+
+            // Note: If you want to re-use the PdfCanvasProcessor, you must call PdfCanvasProcessor.reset()
+            new PdfCanvasProcessor(listener).ProcessPageContent(pdfDoc.GetFirstPage());
+
+            // Get the resultant text after applying the custom filter
+            String actualText = extractionStrategy.GetResultantText();
+
+            pdfDoc.Close();
+
+            // See the resultant text in the console
+            Console.Out.WriteLine(actualText);
+
+            using (StreamWriter writer = new StreamWriter(dest))
+            {
+                writer.Write(actualText);
+            }
+        }
+
+        // The custom filter filters only the text of which the font name ends with Bold or Oblique.
+        protected class CustomFontFilter : TextRegionEventFilter
+        {
+            public CustomFontFilter(Rectangle filterRect)
+                : base(filterRect)
+            {
+            }
+
+            public override bool Accept(IEventData data, EventType type)
+            {
+                if (type.Equals(EventType.RENDER_TEXT))
+                {
+                    TextRenderInfo renderInfo = (TextRenderInfo) data;
+                    PdfFont font = renderInfo.GetFont();
+                    if (null != font)
+                    {
+                        String fontName = font.GetFontProgram().GetFontNames().GetFontName();
+                        return fontName.EndsWith("Bold") || fontName.EndsWith("Oblique");
+                    }
+                }
+
+                return false;
+            }
         }
     }
 }
