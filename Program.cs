@@ -6,7 +6,7 @@ namespace CoreConsole
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World! Jon with the best you can do");
+            Console.WriteLine("I will be writing a pdf extractor for shapes");
         }
     }
 }
